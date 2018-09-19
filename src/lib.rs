@@ -31,14 +31,14 @@
 //!
 //! ```rust
 //! # use handler_map::HandlerMap;
-//!
+//! #
 //! # /// Message which prints to the console when received.
 //! # struct MyMessage;
-//!
+//! #
 //! # fn handle(_: MyMessage) {
 //! #     println!("got your message!");
 //! # }
-//!
+//! #
 //! # let mut map = HandlerMap::new();
 //! # map.insert(handle);
 //! map.call(MyMessage);
