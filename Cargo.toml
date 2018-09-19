@@ -2,5 +2,11 @@
 name = "handler_map"
 version = "0.1.0"
 authors = ["QuietMisdreavus <grey@quietmisdreavus.net>"]
+description = "Map from types to functions that receive them"
+repository = "https://github.com/QuietMisdreavus/handler_map"
+keywords = ["event-handling", "message-handling", "events", "anymap"]
+categories = ["data-structures", "rust-patterns"]
+license = "MPL-2.0"
+readme = "README.md"
 
 [dependencies]
