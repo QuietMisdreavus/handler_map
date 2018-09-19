@@ -117,8 +117,7 @@ impl HandlerMap {
 
     /// Registers a new handler into the map.
     pub fn insert<T: Any, F: Fn(T) + 'static>(&mut self, handler: F) {
-        let ptr: BoxFn<'static, T, F> = Box::new(handler).into();
-        let ptr: BoxFn<'static, Opaque> = ptr.erase().erase_arg();
+        let ptr = BoxFn::from(Box::new(handler)).erase().erase_arg();
         let id = TypeId::of::<T>();
 
         self.0.insert(id, ptr);
