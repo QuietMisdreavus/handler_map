@@ -96,12 +96,12 @@
 //! assert!(!map.is_registered::<MyMessage>());
 //! ```
 
-mod boxfn;
+mod box_fn;
 
 use std::any::{Any, TypeId};
 use std::collections::HashMap;
 
-use boxfn::{BoxFn, Opaque};
+use box_fn::{BoxFn, Opaque};
 
 /// Struct that maps types with functions or closures that can receive them.
 ///
