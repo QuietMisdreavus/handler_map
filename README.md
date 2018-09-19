@@ -11,7 +11,7 @@ The basic idea is that you start with a message type, and a function that receiv
 ```rust
 struct MyMessage;
 fn handle_msg(_: MyMessage) {
-	println!("Got your message!");
+    println!("Got your message!");
 }
 ```
 
