@@ -72,6 +72,24 @@
 //! registered in the map, it returns `true`; otherwise, it returns `false`. If you want to check
 //! that a handler has been registered without calling it, use `is_registered` or
 //! `val_is_registered`.
+//!
+//! If you want to remove an event from the handler, call `remove`:
+//!
+//! ```rust
+//! use handler_map::HandlerMap;
+//!
+//! struct MyMessage;
+//! fn handle_msg(_: MyMessage) {}
+//!
+//! let mut map = HandlerMap::new();
+//! map.insert(handle_msg);
+//!
+//! assert!(map.is_registered::<MyMessage>());
+//!
+//! map.remove::<MyMessage>();
+//!
+//! assert!(!map.is_registered::<MyMessage>());
+//! ```
 
 mod boxfn;
 
