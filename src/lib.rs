@@ -69,7 +69,9 @@
 //!
 //! `call` can take a message of any type, even if that type hasn't been registered. It returns a
 //! `bool` representing whether a handler was called. If a handler for that type has been
-//! registered in the map, it returns `true`; otherwise, it returns `false`.
+//! registered in the map, it returns `true`; otherwise, it returns `false`. If you want to check
+//! that a handler has been registered without calling it, use `is_registered` or
+//! `val_is_registered`.
 
 mod boxfn;
 
@@ -90,16 +92,30 @@ impl HandlerMap {
         Self::default()
     }
 
-    /// Insert a new callable into the map.
-    pub fn insert<T: Any, F: Fn(T) + 'static>(&mut self, callable: F) {
-        let ptr: BoxFn<'static, T, F> = Box::new(callable).into();
+    /// Registers a new handler into the map.
+    pub fn insert<T: Any, F: Fn(T) + 'static>(&mut self, handler: F) {
+        let ptr: BoxFn<'static, T, F> = Box::new(handler).into();
         let ptr: BoxFn<'static, Opaque> = ptr.erase().erase_arg();
         let id = TypeId::of::<T>();
 
         self.0.insert(id, ptr);
     }
 
-    /// Calls the callable with the given message, returning whether the callable was registered.
+    /// Returns true if the given message type has a handler registered in the map.
+    pub fn is_registered<T: Any>(&self) -> bool {
+        let id = TypeId::of::<T>();
+        self.0.contains_key(&id)
+    }
+
+    /// Returns true if the given message has a handler registered in this map.
+    ///
+    /// This is the same operation as `is_registered`, but allows you to call it with a value
+    /// rather than having to supply the type.
+    pub fn val_is_registered<T: Any>(&self, _msg: &T) -> bool {
+        self.is_registered::<T>()
+    }
+
+    /// Calls the handler with the given message, returning whether the handler was registered.
     pub fn call<T: Any>(&self, msg: T) -> bool {
         let id = TypeId::of::<T>();
         if let Some(act) = self.0.get(&id) {
