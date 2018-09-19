@@ -9,14 +9,14 @@ use std::marker::PhantomData;
 // Kinda important that you can't make values of these.
 // But unstable, so we shim it with something else.
 // extern { pub type Opaque; }
-pub struct Opaque(());
+pub(crate) struct Opaque(());
 
 struct BoxFnVtable<A: ?Sized, F: ?Sized = Opaque> {
     call: fn(&F, A),
     drop_box: unsafe fn(*mut F),
 }
 
-pub struct BoxFn<'a, A: 'a + ?Sized, F: 'a + ?Sized = Opaque> {
+pub(crate) struct BoxFn<'a, A: 'a + ?Sized, F: 'a + ?Sized = Opaque> {
     data: &'a mut F,
     vtable: &'a BoxFnVtable<A, F>,
     _invariant: PhantomData<&'a mut &'a ()>,
@@ -81,13 +81,13 @@ impl<'a, A> BoxFn<'a, A> {
 
 impl<'a, A, F: ?Sized> BoxFn<'a, A, F> {
     #[allow(dead_code)]
-    pub fn call(&self, arg: A) {
+    pub(crate) fn call(&self, arg: A) {
         (self.vtable.call)(self.data, arg);
     }
 }
 
 impl<'a> BoxFn<'a, Opaque> {
-    pub unsafe fn call_erased<A: 'a>(&self, arg: A) {
+    pub(crate) unsafe fn call_erased<A: 'a>(&self, arg: A) {
         std::mem::transmute::<
             fn(&Opaque, Opaque),
             fn(&Opaque, A),
