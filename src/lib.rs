@@ -101,6 +101,12 @@ impl HandlerMap {
         self.0.insert(id, ptr);
     }
 
+    /// Un-registers the handler for the given type from this map.
+    pub fn remove<T: Any>(&mut self) {
+        let id = TypeId::of::<T>();
+        self.0.remove(&id);
+    }
+
     /// Returns true if the given message type has a handler registered in the map.
     pub fn is_registered<T: Any>(&self) -> bool {
         let id = TypeId::of::<T>();
