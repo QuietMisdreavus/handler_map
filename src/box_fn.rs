@@ -47,7 +47,7 @@ impl<'a, A: ?Sized, F: ?Sized> Drop for BoxFn<'a, A, F> {
     }
 }
 
-impl<'a, A, F: Fn(A)> From<Box<F>> for BoxFn<'a, A, F> {
+impl<'a, A, F: Fn(A) + 'a> From<Box<F>> for BoxFn<'a, A, F> {
     fn from(f: Box<F>) -> Self {
         unsafe fn drop_box<F>(f: *mut F) {
             drop(Box::from_raw(f));
