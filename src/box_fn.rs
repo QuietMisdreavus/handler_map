@@ -3,19 +3,36 @@
 // not distributed with this file, You can obtain one at
 // http://mozilla.org/MPL/2.0/.
 
+//! Internal implementation of a boxed `Fn(T)` function pointer/closure that can have its argument
+//! type (and its own type) erased.
+//!
+//! These types aren't really meant to be used outside this crate, as they rely on assumptions
+//! based on the uses of `TypeId` in `HandlerMap`.
+
 use std;
 use std::marker::PhantomData;
 
-// Kinda important that you can't make values of these.
-// But unstable, so we shim it with something else.
-// extern { pub type Opaque; }
+/// Opaque handle type that represents an erased type parameter.
+///
+/// If extern types were stable, this could be implemented as `extern { pub type Opaque; }` but
+/// until then we can use this.
+///
+/// Care should be taken that we don't use a concrete instance of this. It should only be used
+/// through a reference, so we can maintain something else's lifetime.
 pub(crate) struct Opaque(());
 
+/// Collection of functions representing the operations we want to use on a boxed closure, namely,
+/// calling it and dropping it.
 struct BoxFnVtable<A: ?Sized, F: ?Sized = Opaque> {
     call: fn(&F, A),
     drop_box: unsafe fn(*mut F),
 }
 
+/// Custom handle to a boxed closure, allowing for preserving or erasing the closure or argument
+/// types.
+///
+/// To create an instance of `BoxFn`, convert an instance of `Box<F: Fn(A)>` using
+/// `From`/`Into`.
 pub(crate) struct BoxFn<'a, A: 'a + ?Sized, F: 'a + ?Sized = Opaque> {
     data: &'a mut F,
     vtable: &'a BoxFnVtable<A, F>,
@@ -50,6 +67,7 @@ impl<'a, A, F: Fn(A)> From<Box<F>> for BoxFn<'a, A, F> {
 }
 
 impl<'a, A, F> BoxFn<'a, A, F> {
+    /// Erases the closure type, converting `BoxFn<'a, T, F>` to `BoxFn<'a, T, Opaque>`.
     pub fn erase(self) -> BoxFn<'a, A> {
         unsafe {
             let data = &mut *(self.data as *mut _ as *mut Opaque);
@@ -65,6 +83,7 @@ impl<'a, A, F> BoxFn<'a, A, F> {
 }
 
 impl<'a, A> BoxFn<'a, A> {
+    /// Erases the argument type, converting `BoxFn<'a, A, Opaque>` to `BoxFn<'a, Opaque, Opaque>`.
     pub fn erase_arg(self) -> BoxFn<'a, Opaque> {
         unsafe {
             let data = &mut *(self.data as *mut _);
@@ -80,13 +99,24 @@ impl<'a, A> BoxFn<'a, A> {
 }
 
 impl<'a, A, F: ?Sized> BoxFn<'a, A, F> {
-    #[allow(dead_code)]
+    /// Calls the closure with the given argument.
+    ///
+    /// This is the equivalent of calling a `Box<Fn(T)>`, but since the `Fn` trait is unstable to
+    /// implement, we have this function.
+    #[allow(dead_code)] // not used in this crate, but added for completeness
     pub(crate) fn call(&self, arg: A) {
         (self.vtable.call)(self.data, arg);
     }
 }
 
 impl<'a> BoxFn<'a, Opaque> {
+    /// Calls an erased closure with the given argument.
+    ///
+    /// # Safety
+    ///
+    /// Callers must ensure that the argument type given to this function is actually the type that
+    /// was used to originally create this `BoxFn` before its types were erased. Failure to uphold
+    /// this constraint can cause the function to be called with invalid data.
     pub(crate) unsafe fn call_erased<A: 'a>(&self, arg: A) {
         std::mem::transmute::<
             fn(&Opaque, Opaque),
