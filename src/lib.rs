@@ -107,16 +107,16 @@ use box_fn::{BoxFn, Opaque};
 ///
 /// See the [module-level documentation](index.html) for more information.
 #[derive(Default)]
-pub struct HandlerMap(HashMap<TypeId, BoxFn<'static, Opaque>>);
+pub struct HandlerMap<'a>(HashMap<TypeId, BoxFn<'a, Opaque>>);
 
-impl HandlerMap {
+impl<'a> HandlerMap<'a> {
     /// Creates a new map with no handlers.
-    pub fn new() -> HandlerMap {
+    pub fn new() -> HandlerMap<'a> {
         Self::default()
     }
 
     /// Registers a new handler into the map.
-    pub fn insert<T: Any, F: Fn(T) + 'static>(&mut self, handler: F) {
+    pub fn insert<T: Any, F: Fn(T) + 'a>(&mut self, handler: F) {
         let ptr = BoxFn::from(Box::new(handler)).erase().erase_arg();
         let id = TypeId::of::<T>();
 
